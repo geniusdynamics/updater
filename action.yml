@@ -1,0 +1,20 @@
+name: "Dependency Updater"
+description: "Scans a repository for outdated dependencies and creates a pull request with the updates."
+author: "Your Name"
+
+inputs:
+  github_token:
+    description: "The GitHub token to use for creating pull requests."
+    required: true
+  scan_path:
+    description: "The path to scan for dependencies."
+    required: false
+    default: "."
+
+runs:
+  using: "docker"
+  image: "Dockerfile"
+
+branding:
+  icon: "arrow-up-circle"
+  color: "green"

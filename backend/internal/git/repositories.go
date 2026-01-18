@@ -3,6 +3,7 @@ package git
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/geniusdynamics/updater/backend/internal/config"
@@ -12,36 +13,37 @@ type Repository struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
-type GitRepository struct {
-	client *config.Config
+
+type GitHubClient struct {
+	client *http.Client
 }
 
-func NewGithubRepository(cfg *config.Config) *GitRepository {
-	return &GitRepository{
-		client: cfg,
+func NewGitHubClient(cfg *config.Config) *GitHubClient {
+	return &GitHubClient{
+		client: cfg.GitHubClient,
 	}
 }
 
-func (repo *GitRepository) GetRepositories() {
-	resp, err := repo.client.GitHubClient.Get("https://api.github.com/user/repos")
+func (c *GitHubClient) GetRepositories() error {
+	resp, err := c.client.Get("https://api.github.com/user/repos")
 	if err != nil {
-		fmt.Println("Error: ", err)
-		return
+		return fmt.Errorf("failed to fetch repositories: %w", err)
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("Status: ", resp.Status)
 	if resp.StatusCode != http.StatusOK {
-		fmt.Println("API ERROR: %d \n", resp.Status)
-		return
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("api error: %s, body: %s", resp.Status, string(body))
 	}
+
 	var repos []Repository
 	if err := json.NewDecoder(resp.Body).Decode(&repos); err != nil {
-		fmt.Printf("Failed to parse JSON: %v \n", err)
-		return
+		return fmt.Errorf("failed to parse response: %w", err)
 	}
+
 	for i, r := range repos {
-		fmt.Printf("NO: %d, Repo Name: %s \n", i, r.Name)
+		fmt.Printf("NO: %d, Repo Name: %s\n", i, r.Name)
 	}
-	fmt.Println(resp.Body)
+
+	return nil
 }

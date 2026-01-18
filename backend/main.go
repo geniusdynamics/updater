@@ -1,14 +1,18 @@
 package main
 
 import (
+	"log"
+
 	"github.com/geniusdynamics/updater/backend/internal/config"
 	"github.com/geniusdynamics/updater/backend/internal/git"
 )
 
 func main() {
-	config := config.NewConfig()
+	cfg := config.NewConfig()
 
-	repo := git.NewGithubRepository(config)
+	githubClient := git.NewGitHubClient(cfg)
 
-	repo.GetRepositories()
+	if err := githubClient.GetRepositories(); err != nil {
+		log.Fatal(err)
+	}
 }

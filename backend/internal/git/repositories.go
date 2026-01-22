@@ -1,12 +1,11 @@
 package git
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"io"
-	"net/http"
 
 	"github.com/geniusdynamics/updater/backend/internal/config"
+	"github.com/google/go-github/v81/github"
 )
 
 type Repository struct {
@@ -15,35 +14,48 @@ type Repository struct {
 }
 
 type GitHubClient struct {
-	client *http.Client
+	client       *github.Client
+	UserName     string
+	Organization *string
 }
 
 func NewGitHubClient(cfg *config.Config) *GitHubClient {
+	client := github.NewClient(cfg.GitHubClient)
 	return &GitHubClient{
-		client: cfg.GitHubClient,
+		client:       client,
+		UserName:     cfg.UserName,
+		Organization: cfg.Organization,
 	}
 }
 
-func (c *GitHubClient) GetRepositories() error {
-	resp, err := c.client.Get("https://api.github.com/user/repos")
+func (c *GitHubClient) GetRepositories() ([]*github.Repository, error) {
+	var repositories []*github.Repository
+	var err error
+	if c.Organization != nil && *c.Organization != "" {
+		repositories, _, err = c.client.Repositories.ListByOrg(context.Background(), *c.Organization, &github.RepositoryListByOrgOptions{})
+	} else {
+		repositories, _, err = c.client.Repositories.ListByUser(context.Background(), c.UserName, &github.RepositoryListByUserOptions{})
+	}
 	if err != nil {
-		return fmt.Errorf("failed to fetch repositories: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("api error: %s, body: %s", resp.Status, string(body))
+		return nil, fmt.Errorf("an error occurred: %w", err)
 	}
 
-	var repos []Repository
-	if err := json.NewDecoder(resp.Body).Decode(&repos); err != nil {
-		return fmt.Errorf("failed to parse response: %w", err)
-	}
+	return repositories, nil
+}
 
-	for i, r := range repos {
-		fmt.Printf("NO: %d, Repo Name: %s\n", i, r.Name)
+func (c *GitHubClient) SearchRepositories(search string) (*github.RepositoriesSearchResult, error) {
+	var searchQuery string
+	if c.Organization != nil && *c.Organization != "" {
+		searchQuery = "org:" + *c.Organization + " " + search + " in:name"
+	} else {
+		searchQuery = "user:" + c.UserName + " " + search + " in:name"
 	}
-
-	return nil
+	repositories, _, err := c.client.Search.Repositories(context.Background(), searchQuery, &github.SearchOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("error occurred when searching: %w", err)
+	}
+	for _, repo := range repositories.Repositories {
+		fmt.Printf("Name: %s, Search: %s \n", *repo.Name, searchQuery)
+	}
+	return repositories, nil
 }

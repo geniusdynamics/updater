@@ -11,8 +11,10 @@ func main() {
 	cfg := config.NewConfig()
 
 	githubClient := git.NewGitHubClient(cfg)
-
-	if err := githubClient.GetRepositories(); err != nil {
+	if _, err := githubClient.GetRepositories(); err != nil {
 		log.Fatal(err)
+	}
+	_, err := githubClient.SearchRepositories("ns8-")
+	if err != nil {
 	}
 }

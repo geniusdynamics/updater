@@ -8,6 +8,8 @@ import (
 type Config struct {
 	GithubAPIKey string
 	GitHubClient *http.Client
+	UserName     string
+	Organization *string
 }
 
 func getEnv(key, fallback string) string {
@@ -19,8 +21,11 @@ func getEnv(key, fallback string) string {
 
 func NewConfig() *Config {
 	token := getEnv("GITHUB_TOKEN", "")
+	org := getEnv("GITHUB_ORGANIZATION", "")
 	return &Config{
 		GithubAPIKey: token,
-		GitHubClient: NewGitHubClient(token),
+		GitHubClient: NewHttpClient(token),
+		UserName:     getEnv("GITHUB_USERNAME", ""),
+		Organization: &org,
 	}
 }

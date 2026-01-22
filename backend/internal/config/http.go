@@ -21,7 +21,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.Base.RoundTrip(reqBodyCopy)
 }
 
-func NewGitHubClient(token string) *http.Client {
+func NewHttpClient(token string) *http.Client {
 	return &http.Client{
 		Timeout: time.Second * 30,
 		Transport: &Transport{

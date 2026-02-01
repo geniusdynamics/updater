@@ -66,7 +66,7 @@ func (c *GitHubClient) SearchRepositories(search string) (*github.RepositoriesSe
 	return repositories, nil
 }
 
-func (c *GitHubClient) CloneRepositories(url string) (string, error) {
+func (c *GitHubClient) CloneRepository(url string) (string, error) {
 	lastUrl := strings.Split(url, "/")
 	target := filepath.Join(c.TemporaryFolder, lastUrl[len(lastUrl)-1])
 	_, err := git.PlainClone(target, false, &git.CloneOptions{

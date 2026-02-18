@@ -241,21 +241,6 @@ func compareSemver(v1, v2 string) int {
 	return 0
 }
 
-func newTag(name string) Tag {
-	return Tag{
-		Name:    name,
-		Version: extractVersion(name),
-	}
-}
-
-func extractVersion(tag string) string {
-	match := semverRegex.FindStringSubmatch(tag)
-	if len(match) > 1 {
-		return match[1]
-	}
-	return ""
-}
-
 func parseSemver(v string) (int, int, int, bool) {
 	var maj, min, pat int
 	_, err := fmt.Sscanf(v, "%d.%d.%d", &maj, &min, &pat)

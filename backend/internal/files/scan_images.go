@@ -43,7 +43,7 @@ func FindDockerImages(dir string, fileNames map[string]bool) ([]DockerImage, err
 			return err
 		}
 
-		content := string(data)
+		content := stripComments(string(data))
 		vars := extractBashVars(content)
 
 		matches := imageRegex.FindAllString(content, -1)
@@ -120,4 +120,42 @@ func extractBashVars(content string) map[string]string {
 	}
 
 	return vars
+}
+
+func stripComments(content string) string {
+	lines := strings.Split(content, "\n")
+	var result []string
+
+	for _, line := range lines {
+		var cleaned strings.Builder
+		inSingle := false
+		inDouble := false
+		for i := 0; i < len(line); i++ {
+			ch := line[i]
+
+			switch ch {
+			case '\'':
+				if !inDouble {
+					inSingle = !inSingle
+				}
+			case '"':
+				if !inSingle {
+					inDouble = !inDouble
+				}
+			case '#':
+				if !inSingle && !inDouble {
+					// stop processing the line
+					i = len(line)
+					continue
+				}
+			}
+
+			if i < len(line) {
+				cleaned.WriteByte(ch)
+			}
+		}
+
+		result = append(result, cleaned.String())
+	}
+	return strings.Join(result, "\n")
 }
